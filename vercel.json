@@ -1,3 +1,0 @@
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/stock_price_server" }]
-}

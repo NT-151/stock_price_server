@@ -3,7 +3,6 @@ from flask_cors import CORS
 from sklearn.ensemble import RandomForestRegressor
 from datetime import datetime, timedelta
 import ssl
-from datetime import datetime, timedelta
 import feedparser
 import pandas as pd
 from langchain_community.document_loaders import NewsURLLoader
@@ -421,28 +420,28 @@ def generate_visualise_data(dataframe, first_prediction, days):
 
 
 # The same as function above but for the combined prediciton instead
-# def generate_combined_visualise_data(dataframe, first_prediction, second_prediction, days):
-#     combined_predictions = [(first + second) / 2 for first,
-#                             second in zip(first_prediction, second_prediction)]
-#     last_fifty = list(dataframe["close"].tail(50))
+def generate_combined_visualise_data(dataframe, first_prediction, second_prediction, days):
+    combined_predictions = [(first + second) / 2 for first,
+                            second in zip(first_prediction, second_prediction)]
+    last_fifty = list(dataframe["close"].tail(50))
 
-#     final_prediction = last_fifty + combined_predictions
-#     dated = datetime.today().date()  # Get today's date without time
-#     list_of_dates = []
-#     while len(list_of_dates) < days:
-#         dated += timedelta(days=1)
-#         # Check if the current date is a weekday (0 to 4 represent Monday to Friday)
-#         if dated.weekday() < 5:
-#             # Convert to Timestamp object
-#             list_of_dates.append(pd.Timestamp(dated))
+    final_prediction = last_fifty + combined_predictions
+    dated = datetime.today().date()  # Get today's date without time
+    list_of_dates = []
+    while len(list_of_dates) < days:
+        dated += timedelta(days=1)
+        # Check if the current date is a weekday (0 to 4 represent Monday to Friday)
+        if dated.weekday() < 5:
+            # Convert to Timestamp object
+            list_of_dates.append(pd.Timestamp(dated))
 
-#     last_fifty_dates = list(pd.to_datetime(dataframe["date"].tail(50)))
-#     new_list_dates = last_fifty_dates + list_of_dates
-#     formatted_dates = [date.strftime('%Y-%m-%d') for date in new_list_dates]
-#     visualise_data = map(lambda v, c: dict(date=v, close=c),
-#                          formatted_dates, final_prediction)
+    last_fifty_dates = list(pd.to_datetime(dataframe["date"].tail(50)))
+    new_list_dates = last_fifty_dates + list_of_dates
+    formatted_dates = [date.strftime('%Y-%m-%d') for date in new_list_dates]
+    visualise_data = map(lambda v, c: dict(date=v, close=c),
+                         formatted_dates, final_prediction)
 
-#     return list(visualise_data)
+    return list(visualise_data)
 
 
 def run_simulation(name):
@@ -474,43 +473,43 @@ def run_simulation(name):
         first_prediction = predict_future_prices(
             dataframe, model, predictors, days)
 
-        return first_prediction
+        return generate_visualise_data(dataframe, first_prediction, 1)
 
-        # # Get news feeds related to the specified stock for sentiment analysis
-        # news_feeds = get_google_news_for_sentiment(name)
+        # Get news feeds related to the specified stock for sentiment analysis
+        news_feeds = get_google_news_for_sentiment(name)
 
-        # # Check if there are any news feeds available
-        # if len(news_feeds) == 0:
-        #     # If no news feeds are available, return prediction with purely historical data
-        #     return generate_visualise_data(dataframe, first_prediction, days)
-        # else:
-        #     # Get page contents of the news feeds
-        #     page_contents = get_page_contents(news_feeds)
+        # Check if there are any news feeds available
+        if len(news_feeds) == 0:
+            # If no news feeds are available, return prediction with purely historical data
+            return generate_visualise_data(dataframe, first_prediction, days)
+        else:
+            # Get page contents of the news feeds
+            page_contents = get_page_contents(news_feeds)
 
-        #     # Perform sentiment analysis on the page contents
-        #     sentimental = perform_sentiment_analysis(page_contents)
+            # Perform sentiment analysis on the page contents
+            sentimental = perform_sentiment_analysis(page_contents)
 
-        #     # Prepare data by combining sentiment analysis with historical data
-        #     dataframe_with_sentiment = prepare_data(sentimental, dataframe)
+            # Prepare data by combining sentiment analysis with historical data
+            dataframe_with_sentiment = prepare_data(sentimental, dataframe)
 
-        #     # Extract sentiment-related columns
-        #     sentiment_columns = [
-        #         i for i in dataframe_with_sentiment.columns if dataframe_with_sentiment[i].dtype == 'bool']
+            # Extract sentiment-related columns
+            sentiment_columns = [
+                i for i in dataframe_with_sentiment.columns if dataframe_with_sentiment[i].dtype == 'bool']
 
-        #     # Define predictors including sentiment-related columns and sentiment scores
-        #     other_predictors = predictors + sentiment_columns + ["score"]
+            # Define predictors including sentiment-related columns and sentiment scores
+            other_predictors = predictors + sentiment_columns + ["score"]
 
-        #     # Check if there is enough data for analysis
-        #     if len(dataframe_with_sentiment) <= 3:
-        #         # If there is not enough data, return prediction with purely historical data
-        #         return generate_visualise_data(dataframe, first_prediction, days)
-        #     else:
-        #         # Predict future prices using the model and updated predictors
-        #         second_prediction = predict_future_prices(
-        #             dataframe_with_sentiment, model, other_predictors, days)
+            # Check if there is enough data for analysis
+            if len(dataframe_with_sentiment) <= 3:
+                # If there is not enough data, return prediction with purely historical data
+                return generate_visualise_data(dataframe, first_prediction, days)
+            else:
+                # Predict future prices using the model and updated predictors
+                second_prediction = predict_future_prices(
+                    dataframe_with_sentiment, model, other_predictors, days)
 
-        #         # return combined prediciton
-        #         return generate_combined_visualise_data(dataframe, first_prediction, second_prediction, days)
+                # return combined prediciton
+                return generate_combined_visualise_data(dataframe, first_prediction, second_prediction, days)
 
 
 @app.route("/api/visualise", methods=["POST"])
@@ -579,7 +578,7 @@ def visualise_historical_data():
 @app.route("/api/simulate", methods=["POST"])
 def simulation():
     try:
-        data = request.json
+        data = request.get_json()
         name = data.get("name")
         print("Received JSON data:", name)
         visualise_6month_data = fetch_and_process_data(name, "6mo")
