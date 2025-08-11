@@ -8,8 +8,10 @@ import pandas as pd
 from langchain_community.document_loaders import NewsURLLoader
 import yfinance as yf
 from langchain_openai import ChatOpenAI
-import config
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -307,7 +309,7 @@ def get_page_contents(list_of_urls):
 def llm_analysis(name):
     # Initialize the ChatOpenAI instance with the API key
     llm = ChatOpenAI(
-        api_key=config.api_key)
+        api_key=os.getenv("API_KEY"))
 
     # Get news links related to the given stock name
     news_links = get_google_news_for_sentiment(name)
