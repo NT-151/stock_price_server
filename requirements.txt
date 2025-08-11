@@ -73,7 +73,7 @@ regex==2025.7.34
 requests==2.32.4
 requests-file==2.1.0
 requests-toolbelt==1.0.0
-scikit-learn==1.4.1.post1
+scikit-learn
 scipy==1.16.1
 sgmllib3k==1.0.0
 six==1.17.0
